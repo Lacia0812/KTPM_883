@@ -26,11 +26,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection("ApplicationSettings"));
+builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection("AppSettings"));
 builder.Services.AddOptions();
+
+builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
 
