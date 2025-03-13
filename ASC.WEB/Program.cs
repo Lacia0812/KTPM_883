@@ -11,37 +11,49 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                       throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
-
-builder.Services.AddIdentity<IdentityUser, IdentityRole>((options) =>
-{
-    options.User.RequireUniqueEmail = true;
-}).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
-
-builder.Services.AddScoped<DbContext, ApplicationDbContext>();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<ASCWebContext>();
+
+//builder.Services.AddIdentity<IdentityUser, IdentityRole>((options) =>
+//{
+//    options.User.RequireUniqueEmail = true;
+//}).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+//them thu
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders().AddDefaultUI();
+// -->
+builder.Services.AddScoped<DbContext, ApplicationDbContext>();
+
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+/*builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<ApplicationDbContext>();*/
 
-builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection("AppSettings"));
 builder.Services.AddOptions();
+builder.Services.Configure<ApplicationSettings>(builder.Configuration.GetSection("AppSettings"));
 
-builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddRazorPages();
 
 builder.Services.AddTransient<IEmailSender, AuthMessgageSender>();
 builder.Services.AddTransient<ISmsSender, AuthMessgageSender>();
+//Addition lab4
+//builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+//End lab4
 builder.Services.AddSingleton<IIdentitySeed, IdentitySeed>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -57,7 +69,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseSession();
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -71,7 +83,8 @@ using (var scope = app.Services.CreateScope())
     await storageSeed.Seed(
         scope.ServiceProvider.GetService<UserManager<IdentityUser>>(),
         scope.ServiceProvider.GetService<RoleManager<IdentityRole>>(),
-        scope.ServiceProvider.GetService<IOptions<ApplicationSettings>>());
+        scope.ServiceProvider.GetService<IOptions<ApplicationSettings>>()
+    );
 }
 
 app.Run();
